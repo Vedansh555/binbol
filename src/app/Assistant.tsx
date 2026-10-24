@@ -25,7 +25,7 @@ export default function Assistant() {
   const [msgs, setMsgs] = useState<Msg[]>([
     {
       role: "bot",
-      text: "Namaste! Snap any item and I'll tell you if it can be recycled — and how. Or just ask me anything about waste.",
+      text: "Namaste! I'm your Recycle Buddy ♻ Snap any item and I'll tell you if it can be recycled — and how.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -64,8 +64,8 @@ export default function Assistant() {
     }
   }
 
-  async function onAsk() {
-    const q = input.trim();
+  async function onAsk(preset?: string) {
+    const q = (preset ?? input).trim();
     if (!q || busy) return;
     setInput("");
     push({ role: "user", text: q });
@@ -108,12 +108,14 @@ export default function Assistant() {
   return (
     <>
       {open && (
-        <div className="fixed z-50 bottom-24 right-4 w-[calc(100vw-2rem)] max-w-sm h-[min(70vh,540px)] flex flex-col rounded-3xl border-2 border-black bg-white shadow-[0_24px_48px_-16px_rgba(0,0,0,0.35)] overflow-hidden">
+        <div className="fixed z-50 bottom-24 right-3 sm:right-5 w-[calc(100vw-1.5rem)] max-w-sm h-[min(70vh,540px)] flex flex-col rounded-3xl border-2 border-black bg-white shadow-[0_24px_48px_-16px_rgba(0,0,0,0.35)] overflow-hidden">
           <div className="flex items-center gap-3 px-4 py-3 border-b-2 border-black">
             <BotFace small />
             <div className="flex-1">
-              <div className="font-black leading-none">BinBol Buddy</div>
-              <div className="text-xs text-neutral-500 mt-0.5">Recycling helper · हिंदी / English</div>
+              <div className="font-black leading-none">Recycle Buddy</div>
+              <div className="text-xs text-neutral-500 mt-0.5 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1e7a46]" /> Online · हिंदी / English
+              </div>
             </div>
             <button onClick={() => setOpen(false)} aria-label="Close" className="text-xl leading-none px-2">
               ×
@@ -163,6 +165,31 @@ export default function Assistant() {
                 </div>
               )
             )}
+            {msgs.length === 1 && !busy && (
+              <div className="space-y-2 pt-1">
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="w-full rounded-2xl bg-black text-white px-4 py-3 text-left flex items-center gap-3 card-lift"
+                >
+                  <span className="text-xl">📷</span>
+                  <span>
+                    <span className="block font-bold text-sm">Snap an item</span>
+                    <span className="block text-xs opacity-70">Recyclable? Which bin? How?</span>
+                  </span>
+                </button>
+                <div className="flex flex-wrap gap-1.5">
+                  {["Chips packet recyclable?", "Purani battery kahan daalun?", "Pizza box?"].map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => onAsk(q)}
+                      className="text-xs rounded-full border-2 border-black px-3 py-1 hover:bg-black hover:text-white transition-colors"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {busy && (
               <div className="flex">
                 <div className="rounded-2xl border-2 border-black px-3 py-2 text-sm">
@@ -208,7 +235,7 @@ export default function Assistant() {
               className="flex-1 min-w-0 rounded-full border-2 border-black px-4 py-2 text-sm outline-none"
             />
             <button
-              onClick={onAsk}
+              onClick={() => onAsk()}
               disabled={busy || !input.trim()}
               aria-label="Send"
               className="shrink-0 w-11 h-11 rounded-full border-2 border-black flex items-center justify-center disabled:opacity-30"
@@ -221,25 +248,34 @@ export default function Assistant() {
 
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label={open ? "Close BinBol Buddy" : "Open BinBol Buddy"}
-        className="fixed z-50 bottom-5 right-4 group"
+        aria-label={open ? "Close Recycle Buddy" : "Open Recycle Buddy"}
+        className="fixed z-50 bottom-3 right-3 sm:bottom-5 sm:right-5 group flex flex-col items-center"
       >
+        <span className="block transition-transform group-hover:-translate-y-1 group-active:scale-95">
+          {open ? <CloseFace /> : <BotFace />}
+        </span>
         {!open && (
-          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-white border-2 border-black px-3 py-1 text-xs font-semibold shadow-sm hidden sm:block">
-            Can I recycle this?
+          <span className="buddy-pop -mt-2 rounded-full bg-white border-2 border-black px-2 py-0.5 text-[10px] font-bold leading-none whitespace-nowrap shadow-sm">
+            ♻ Recycle Buddy
           </span>
         )}
-        <span className="block transition-transform group-hover:-translate-y-1 group-active:scale-95">
-          <BotFace />
-        </span>
       </button>
     </>
   );
 }
 
+function CloseFace() {
+  return (
+    <svg width={56} height={56} viewBox="0 0 64 64" className="drop-shadow-[0_8px_12px_rgba(0,0,0,0.3)]">
+      <circle cx="32" cy="32" r="31" fill="#0a0a0a" />
+      <path d="M24 24 L40 40 M40 24 L24 40" stroke="#fff" strokeWidth="4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // A little smiling bin as the assistant's face.
 function BotFace({ small = false }: { small?: boolean }) {
-  const s = small ? 36 : 64;
+  const s = small ? 36 : 56;
   return (
     <svg width={s} height={s} viewBox="0 0 64 64" className={small ? "" : "drop-shadow-[0_8px_12px_rgba(0,0,0,0.3)]"}>
       <circle cx="32" cy="32" r="31" fill="#0a0a0a" />

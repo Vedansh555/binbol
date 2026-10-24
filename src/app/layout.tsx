@@ -25,7 +25,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-white text-black">
+      {/* bottom padding keeps page content clear of the floating Recycle Buddy */}
+      <body className="min-h-full flex flex-col bg-white text-black pb-24">
         {children}
         <Assistant />
       </body>

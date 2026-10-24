@@ -31,8 +31,9 @@ export default function Bin3D() {
     scene.environment = envTex;
 
     const camera = new THREE.PerspectiveCamera(32, width / height, 0.1, 100);
-    camera.position.set(0, 1.45, 6.2);
-    camera.lookAt(0, 0.95, 0);
+    // framed with headroom so the lid never leaves the canvas when open
+    camera.position.set(0, 1.9, 7.4);
+    camera.lookAt(0, 1.25, 0);
 
     const key = new THREE.DirectionalLight(0xffffff, 1.6);
     key.position.set(3, 5, 4);
@@ -153,11 +154,16 @@ export default function Bin3D() {
         velocity *= 0.95;
         bin.rotation.y += reduceMotion ? 0 : 0.006 + velocity;
       }
-      // Lid: closed most of the cycle, pops open briefly every ~5s.
-      const cycle = (t % 5) / 5;
-      const open = cycle > 0.55 && cycle < 0.85 ? Math.sin(((cycle - 0.55) / 0.3) * Math.PI) : 0;
-      hinge.rotation.x = reduceMotion ? 0 : -open * 1.05;
-      pedal.rotation.x = reduceMotion ? 0 : open * 0.25;
+      // Lid cycle (6s): rest, ease open, hold, ease shut. The pedal presses
+      // in step so it reads as a real pedal bin.
+      const c = (t % 6) / 6;
+      const ease = (x: number) => x * x * (3 - 2 * x);
+      let open = 0;
+      if (c > 0.4 && c <= 0.55) open = ease((c - 0.4) / 0.15);
+      else if (c > 0.55 && c <= 0.75) open = 1;
+      else if (c > 0.75 && c <= 0.9) open = ease(1 - (c - 0.75) / 0.15);
+      hinge.rotation.x = reduceMotion ? 0 : -open * 0.85;
+      pedal.rotation.x = reduceMotion ? 0 : open * 0.22;
       bin.position.y = reduceMotion ? 0 : Math.sin(t * 1.4) * 0.02;
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
