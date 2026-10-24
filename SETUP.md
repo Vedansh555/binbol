@@ -42,9 +42,15 @@ be done from code.
    reporting a full, overflowing, or mixed bin, in Hindi or English.
 
    Known bin stations: RJB-01 (Rajendra Bhawan, main gate), RJB-03
-   (Rajendra Bhawan, behind mess), MESS-2 (Mess block 2, back door), GB-04
-   (Govind Bhawan, common room side), KB-02 (Kasturba Bhawan, near
-   parking), LHC-01 (LHC main entrance).
+   (Rajendra Bhawan, behind mess), GB-04 (Govind Bhawan, common room
+   side), KB-02 (Kasturba Bhawan, near parking), RVB-01 (Ravindra Bhawan,
+   mess back gate), AZB-02 (Azad Bhawan, common room side), JWB-01
+   (Jawahar Bhawan, main entrance), CTB-02 (Cautley Bhawan, mess side),
+   KMB-01 (Kumaon Bhawan, parking lot), RJV-01 (Rajiv Bhawan, near gym),
+   MESS-2 (Mess block 2, back door), LHC-01 (LHC main entrance), LIB-01
+   (Central Library, entrance plaza), SPC-01 (Sports Complex, gate near
+   stadium), MMM-01 (MMM Bhawan, canteen area), MAIN-01 (Main Building,
+   front lawn).
 
    When the caller describes a location (even vaguely, e.g. "peeche wala
    hara bin"), match it to the closest known station and confirm it with
@@ -118,8 +124,12 @@ gap you missed).
 
 ## What's seeded vs. what's real
 
-- `src/lib/stations.ts` has 6 placeholder bin stations with placeholder
-  coordinates. Swap in real IIT Roorkee bhawan locations if you want the
-  dashboard to feel grounded for local judges.
+- `src/lib/stations.ts` has 16 placeholder bin stations (most IIT Roorkee
+  bhawans, mess blocks, library, LHC, sports complex, main building) with
+  placeholder coordinates. Swap in real names/GPS once you've walked the
+  ones you'll actually pilot with, to make the dashboard feel grounded for
+  local judges — keep the `ZONE-NN` id format when you do, since both the
+  ElevenLabs system prompt (step 3 above) and `matchStationByText()` in
+  code reference these ids and landmark strings.
 - Nothing else is mocked — classification, TTS, ticket filing, and route
   scoring all run against your real API keys and real photos/voice.
