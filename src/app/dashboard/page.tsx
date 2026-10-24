@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import ImpactStrip from "../ImpactStrip";
 
 interface ScanLog {
   id: string;
-  stationId: string;
+  stationId?: string;
   item: string;
   stream: string;
   binColor: string;
@@ -102,7 +103,11 @@ export default function DashboardPage() {
         4-stream log, open reports, and today&apos;s urgency-scored route.
       </p>
 
-      <div className="mt-6 grid sm:grid-cols-4 gap-3">
+      <div className="mt-6">
+        <ImpactStrip />
+      </div>
+
+      <div className="mt-4 grid sm:grid-cols-4 gap-3">
         {(["wet", "dry", "hazardous", "sanitary"] as const).map((s) => (
           <div key={s} className={`stream-${s} rounded-xl p-4`}>
             <div className="text-3xl font-black">{streamCounts[s] ?? 0}</div>
@@ -187,7 +192,7 @@ export default function DashboardPage() {
             scans.map((s) => (
               <div key={s.id} className="p-3 text-sm flex justify-between">
                 <span>
-                  <span className="font-semibold">{s.stationId}</span> ·{" "}
+                  <span className="font-semibold">{s.stationId ?? "Buddy"}</span> ·{" "}
                   {s.item} →{" "}
                   <span className={`stream-${s.stream} px-2 py-0.5 rounded-full text-xs`}>
                     {s.stream}

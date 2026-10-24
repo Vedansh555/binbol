@@ -2,12 +2,13 @@ import type { Stream } from "./stations";
 
 export interface ScanLog {
   id: string;
-  stationId: string;
+  stationId?: string; // absent for Recycle Buddy scans (not tied to a bin)
   item: string;
   stream: Stream;
   binColor: string;
   reason: string;
   confidence: number;
+  recyclable: boolean;
   lang: "hi" | "en";
   createdAt: string;
 }

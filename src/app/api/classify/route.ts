@@ -18,10 +18,8 @@ export async function POST(req: NextRequest) {
 
     const result = await classifyWasteImage(imageBase64, mimeType || "image/jpeg");
 
-    // The assistant's "can I recycle this?" camera isn't tied to a bin
-    // station, so it doesn't count toward the station scan log.
-    if (!stationId) return NextResponse.json(result);
-
+    // Every scan is logged — it's what feeds the campus impact counter and
+    // the estate office's 4-stream log.
     const scan = addScan({
       stationId,
       item: result.item,
@@ -29,6 +27,7 @@ export async function POST(req: NextRequest) {
       binColor: result.binColor,
       reason: result.reason,
       confidence: result.confidence,
+      recyclable: result.recyclable,
       lang: lang ?? "hi",
     });
 

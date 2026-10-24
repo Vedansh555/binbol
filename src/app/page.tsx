@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { STATIONS } from "@/lib/stations";
 import Bin3D from "./Bin3D";
+import ImpactStrip from "./ImpactStrip";
 
 export default function Home() {
   return (
@@ -38,6 +39,9 @@ export default function Home() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 pb-16">
+        <div className="mb-6">
+          <ImpactStrip />
+        </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <Link
             href="/dashboard"

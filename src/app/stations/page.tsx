@@ -4,7 +4,8 @@ import { STATIONS, type Stream } from "@/lib/stations";
 const STREAMS: Stream[] = ["wet", "dry", "hazardous", "sanitary"];
 
 // Plain directory of bin stations: where they are and how many bins of each
-// stream sit there. Deliberately no camera/scan here — scanning is per item.
+// stream sit there. Tap a row for each bin's exact spot and fill level.
+// Deliberately no camera here: scanning happens in Recycle Buddy.
 export default function StationsPage() {
   const totals = STREAMS.map((st) => STATIONS.reduce((n, s) => n + s.bins[st], 0));
   const totalBins = totals.reduce((a, b) => a + b, 0);
@@ -44,15 +45,16 @@ export default function StationsPage() {
             const spot = s.landmark.split(", ").slice(1).join(", ") || s.landmark;
             const total = STREAMS.reduce((n, st) => n + s.bins[st], 0);
             return (
-              <div
+              <Link
                 key={s.id}
-                className="grid grid-cols-[1fr_auto] sm:grid-cols-[90px_1fr_repeat(4,56px)_56px] gap-2 items-center px-5 py-3.5 border-t border-neutral-200 first:border-t-0"
+                href={`/stations/${s.id}`}
+                className="group hover:bg-neutral-50 transition-colors grid grid-cols-[1fr_auto] sm:grid-cols-[90px_1fr_repeat(4,56px)_56px] gap-2 items-center px-5 py-3.5 border-t border-neutral-200 first:border-t-0"
               >
                 <span className="font-mono text-xs text-neutral-500 sm:order-none order-first col-span-2 sm:col-span-1">
                   {s.id}
                 </span>
                 <div>
-                  <div className="font-bold">{place}</div>
+                  <div className="font-bold group-hover:underline">{place} <span className="text-neutral-400 font-normal">→</span></div>
                   <div className="text-sm text-neutral-500 capitalize">{spot}</div>
                 </div>
                 {STREAMS.map((st) => (
@@ -67,7 +69,7 @@ export default function StationsPage() {
                   {total}
                   <span className="sm:hidden text-xs font-normal text-neutral-500"> bins</span>
                 </span>
-              </div>
+              </Link>
             );
           })}
         </div>
