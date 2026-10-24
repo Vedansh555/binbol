@@ -50,7 +50,12 @@ export default function Home() {
       </div>
 
       <div className="mt-12 text-sm text-neutral-500">
-        <div className="font-semibold text-neutral-700 mb-1">Demo bin stations</div>
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-semibold text-neutral-700">Demo bin stations</span>
+          <Link href="/qr" className="text-xs underline hover:text-black">
+            Print QR codes →
+          </Link>
+        </div>
         <div className="flex flex-wrap gap-2">
           {STATIONS.map((s) => (
             <Link

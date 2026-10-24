@@ -36,3 +36,9 @@ body {
   background: #b8960c;
   color: white;
 }
+
+@media print {
+  body {
+    background: white;
+  }
+}

@@ -23,6 +23,10 @@ export default function ScanClient({ station }: { station: Station }) {
   const [lang, setLang] = useState<"hi" | "en">("hi");
   const [error, setError] = useState<string | null>(null);
   const [playingAudio, setPlayingAudio] = useState(false);
+  const [scanCount, setScanCount] = useState(0);
+  const [lastAudioBlob, setLastAudioBlob] = useState<Blob | null>(null);
+
+  const LOW_CONFIDENCE = 0.55;
 
   async function handleFile(file: File) {
     setError(null);
@@ -47,6 +51,7 @@ export default function ScanClient({ station }: { station: Station }) {
       const data: ClassifyResponse = await res.json();
       if (!res.ok) throw new Error(data.error || "Classification failed");
       setResult(data);
+      setScanCount((n) => n + 1);
       await playSpoken(data, lang);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -66,13 +71,19 @@ export default function ScanClient({ station }: { station: Station }) {
       });
       if (!res.ok) throw new Error("TTS failed");
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.onended = () => setPlayingAudio(false);
-      await audio.play();
+      setLastAudioBlob(blob);
+      await playBlob(blob);
     } catch {
       setPlayingAudio(false);
     }
+  }
+
+  async function playBlob(blob: Blob) {
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    setPlayingAudio(true);
+    audio.onended = () => setPlayingAudio(false);
+    await audio.play();
   }
 
   return (
@@ -82,8 +93,15 @@ export default function ScanClient({ station }: { station: Station }) {
       </Link>
 
       <div className="mt-4 rounded-2xl border-2 border-black p-5">
-        <div className="text-xs uppercase tracking-wide opacity-60">
-          {station.id} · {station.landmark}
+        <div className="flex items-center justify-between">
+          <div className="text-xs uppercase tracking-wide opacity-60">
+            {station.id} · {station.landmark}
+          </div>
+          {scanCount > 0 && (
+            <div className="text-xs rounded-full bg-neutral-100 border border-neutral-300 px-2 py-0.5 text-neutral-500">
+              {scanCount} scan{scanCount === 1 ? "" : "s"} this session
+            </div>
+          )}
         </div>
         <h1 className="text-2xl font-black mt-1">Scan &amp; Speak</h1>
 
@@ -137,16 +155,49 @@ export default function ScanClient({ station }: { station: Station }) {
 
         {result && (
           <div className="mt-5 rounded-xl border border-neutral-300 p-4">
-            <div className="font-semibold">{result.item}</div>
+            <div className="flex items-start justify-between gap-2">
+              <div className="font-semibold">{result.item}</div>
+              <span
+                className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-mono ${
+                  result.confidence < LOW_CONFIDENCE
+                    ? "bg-amber-100 text-amber-800 border border-amber-300"
+                    : "bg-neutral-100 text-neutral-500"
+                }`}
+                title="Model confidence"
+              >
+                {Math.round(result.confidence * 100)}%
+              </span>
+            </div>
             <div className="text-sm text-neutral-600 mt-1">{result.reason}</div>
             <div
               className={`stream-${result.stream} inline-block mt-3 px-3 py-1 rounded-full text-sm font-bold uppercase tracking-wide`}
             >
               {result.stream} · {result.binColor}
             </div>
-            <div className="mt-3 text-sm italic text-neutral-500">
-              “{lang === "hi" ? result.spokenHindi : result.spokenEnglish}”
-              {playingAudio && " 🔊"}
+
+            {result.confidence < LOW_CONFIDENCE && (
+              <div className="mt-3 text-sm rounded-lg bg-amber-50 border border-amber-300 text-amber-800 px-3 py-2">
+                Not fully sure about this one — a closer, well-lit photo of
+                just the item will usually fix it. Worth a re-scan before you
+                bin it.
+              </div>
+            )}
+
+            <div className="mt-3 flex items-center gap-2 text-sm italic text-neutral-500">
+              <span>
+                “{lang === "hi" ? result.spokenHindi : result.spokenEnglish}”
+              </span>
+              {lastAudioBlob && (
+                <button
+                  onClick={() => playBlob(lastAudioBlob)}
+                  disabled={playingAudio}
+                  className="shrink-0 not-italic rounded-full border border-neutral-300 w-7 h-7 flex items-center justify-center hover:border-black disabled:opacity-40"
+                  aria-label="Replay"
+                  title="Replay"
+                >
+                  {playingAudio ? "…" : "🔊"}
+                </button>
+              )}
             </div>
           </div>
         )}

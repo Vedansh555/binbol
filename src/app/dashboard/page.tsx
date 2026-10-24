@@ -155,6 +155,11 @@ export default function DashboardPage() {
                   <span className={`stream-${s.stream} px-2 py-0.5 rounded-full text-xs`}>
                     {s.stream}
                   </span>
+                  {s.confidence < 0.55 && (
+                    <span className="ml-2 text-xs rounded-full bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5">
+                      needs review
+                    </span>
+                  )}
                 </span>
                 <span className="text-neutral-400">
                   {new Date(s.createdAt).toLocaleTimeString()}
