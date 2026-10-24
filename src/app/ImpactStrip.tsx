@@ -7,6 +7,7 @@ interface Impact {
   recyclable: number;
   recyclablePct: number;
   hazardous: number;
+  demo: number;
 }
 
 // Live counters fed by every Recycle Buddy scan; refreshes every 10s so the
@@ -41,7 +42,8 @@ export default function ImpactStrip() {
       <div className="flex items-center justify-between px-5 py-2.5 bg-black text-white text-xs uppercase tracking-wide">
         <span>Live campus impact</span>
         <span className="flex items-center gap-1.5 normal-case tracking-normal">
-          <span className="w-2 h-2 rounded-full bg-[#2ecc71] animate-pulse" /> from every scan
+          <span className="w-2 h-2 rounded-full bg-[#2ecc71] animate-pulse" />
+          {data?.demo ? `live · incl. ${data.demo} demo items` : "live from every scan"}
         </span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4">

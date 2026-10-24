@@ -9,6 +9,7 @@ export interface ScanLog {
   reason: string;
   confidence: number;
   recyclable: boolean;
+  demo?: boolean; // seeded example, not a real scan
   lang: "hi" | "en";
   createdAt: string;
 }
@@ -35,10 +36,52 @@ interface Store {
   reports: Report[];
 }
 
+// Demo seed so the impact counter and dashboard aren't empty on a fresh
+// (cold-started) instance. Typical campus items with their standard
+// classification; flagged `demo` and labelled as demo data in the UI.
+const DEMO_ITEMS: [string, Stream, boolean][] = [
+  ["PET water bottle", "dry", true],
+  ["Chips packet (multilayer)", "dry", false],
+  ["Banana peel", "wet", true],
+  ["AA battery", "hazardous", false],
+  ["Newspaper", "dry", true],
+  ["Tetra Pak juice carton", "dry", true],
+  ["Plastic-lined paper cup", "dry", false],
+  ["Used face mask", "sanitary", false],
+  ["Aluminium soft-drink can", "dry", true],
+  ["Leftover rice and dal", "wet", true],
+  ["Cardboard box", "dry", true],
+  ["Thermocol plate", "dry", false],
+  ["Tea leaves", "wet", true],
+  ["Glass sauce bottle", "dry", true],
+  ["Dead phone charger", "hazardous", true],
+  ["Sanitary pad", "sanitary", false],
+  ["Plastic straw", "dry", false],
+  ["Notebook paper", "dry", true],
+  ["Egg shells", "wet", true],
+  ["CFL bulb", "hazardous", false],
+];
+
+function demoScans(): ScanLog[] {
+  const now = Date.now();
+  return DEMO_ITEMS.map(([item, stream, recyclable], i) => ({
+    id: `demo_${i}`,
+    item,
+    stream,
+    binColor: { wet: "Green bin", dry: "Blue bin", hazardous: "Red bin", sanitary: "Yellow bin" }[stream],
+    reason: "",
+    confidence: 0.9,
+    recyclable,
+    lang: "hi" as const,
+    demo: true,
+    createdAt: new Date(now - (i + 1) * 17 * 60 * 1000).toISOString(),
+  }));
+}
+
 const g = globalThis as unknown as { __binbolStore?: Store };
 
 if (!g.__binbolStore) {
-  g.__binbolStore = { scans: [], reports: [] };
+  g.__binbolStore = { scans: demoScans(), reports: [] };
 }
 
 export const store = g.__binbolStore;

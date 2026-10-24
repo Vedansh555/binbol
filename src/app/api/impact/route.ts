@@ -12,5 +12,6 @@ export async function GET() {
     recyclable,
     recyclablePct: checked ? Math.round((recyclable / checked) * 100) : 0,
     hazardous,
+    demo: scans.filter((s) => s.demo).length,
   });
 }
