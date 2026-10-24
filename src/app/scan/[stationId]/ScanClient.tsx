@@ -160,7 +160,7 @@ export default function ScanClient({ station }: { station: Station }) {
               <span
                 className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-mono ${
                   result.confidence < LOW_CONFIDENCE
-                    ? "bg-amber-100 text-amber-800 border border-amber-300"
+                    ? "border-2 border-dashed border-black font-bold"
                     : "bg-neutral-100 text-neutral-500"
                 }`}
                 title="Model confidence"
@@ -176,10 +176,10 @@ export default function ScanClient({ station }: { station: Station }) {
             </div>
 
             {result.confidence < LOW_CONFIDENCE && (
-              <div className="mt-3 text-sm rounded-lg bg-amber-50 border border-amber-300 text-amber-800 px-3 py-2">
-                Not fully sure about this one — a closer, well-lit photo of
-                just the item will usually fix it. Worth a re-scan before you
-                bin it.
+              <div className="mt-3 text-sm rounded-lg border-2 border-dashed border-black px-3 py-2">
+                <span className="font-bold">⚠ Not fully sure</span> — a
+                closer, well-lit photo of just the item will usually fix it.
+                Worth a re-scan before you bin it.
               </div>
             )}
 

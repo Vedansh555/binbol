@@ -17,26 +17,25 @@ export default function Home() {
           </p>
 
           <div className="mt-6 flex flex-wrap gap-2 text-xs">
-            <span className="px-3 py-1 rounded-full bg-neutral-900 text-white">
+            <span className="px-3 py-1 rounded-full bg-black text-white">
               4-stream segregation
             </span>
-            <span className="px-3 py-1 rounded-full border border-neutral-300">
+            <span className="px-3 py-1 rounded-full border border-black">
               Hindi voice agent
             </span>
-            <span className="px-3 py-1 rounded-full border border-neutral-300">
+            <span className="px-3 py-1 rounded-full border border-black">
               Zero new hardware
             </span>
           </div>
         </div>
 
         <div className="bin3d-scene mx-auto" aria-hidden="true">
-          <div className="bin3d-cube">
-            <div className="bin3d-face bin3d-face--front">Wet</div>
-            <div className="bin3d-face bin3d-face--back">Wet</div>
-            <div className="bin3d-face bin3d-face--right">Dry</div>
-            <div className="bin3d-face bin3d-face--left">Dry</div>
-            <div className="bin3d-face bin3d-face--top">Hazard</div>
-            <div className="bin3d-face bin3d-face--bottom">Sanitary</div>
+          <div className="bin3d-rig">
+            <div className="bin3d-shadow" />
+            <div className="bin3d-body" />
+            <div className="bin3d-label">BinBol</div>
+            <div className="bin3d-lid" />
+            <div className="bin3d-knob" />
           </div>
         </div>
       </div>

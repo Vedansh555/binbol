@@ -156,7 +156,7 @@ export default function DashboardPage() {
                     {s.stream}
                   </span>
                   {s.confidence < 0.55 && (
-                    <span className="ml-2 text-xs rounded-full bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5">
+                    <span className="ml-2 text-xs rounded-full border-2 border-dashed border-black px-2 py-0.5 font-bold">
                       needs review
                     </span>
                   )}

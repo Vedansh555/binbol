@@ -54,7 +54,7 @@ export default function CallPage() {
             <elevenlabs-convai agent-id={AGENT_ID}></elevenlabs-convai>
           </div>
         ) : (
-          <div className="mt-5 rounded-lg bg-amber-50 border border-amber-300 p-3 text-sm text-amber-800">
+          <div className="mt-5 rounded-lg border-2 border-dashed border-black p-3 text-sm">
             Voice agent not configured yet — set{" "}
             <code>NEXT_PUBLIC_ELEVENLABS_AGENT_ID</code> in <code>.env.local</code>{" "}
             (see SETUP.md) to show the live mic widget here. Using the manual
@@ -119,8 +119,8 @@ export default function CallPage() {
           </button>
 
           {ticket && (
-            <p className="mt-3 text-sm text-green-700">
-              Ticket #{ticket} filed. See it on the{" "}
+            <p className="mt-3 text-sm font-semibold">
+              ✓ Ticket #{ticket} filed. See it on the{" "}
               <Link href="/dashboard" className="underline">
                 dashboard
               </Link>
