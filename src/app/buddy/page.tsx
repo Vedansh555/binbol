@@ -13,19 +13,23 @@ interface Result {
   recyclable: boolean;
   recycleSteps: string[];
   scrapValue: string;
+  spokenHindi?: string; // what the voice says, in Hindi
   error?: string;
 }
 
 interface Chat {
   role: "user" | "bot";
   text: string;
+  speak?: string; // Hindi version for the voice
 }
 
 // 0.1s of silence, used to unlock audio playback on a tap.
 const SILENT_WAV =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
+// The screen stays in English; the voice speaks Hindi.
 function verdictFor(r: Result) {
+  if (r.spokenHindi) return r.spokenHindi;
   const head = r.recyclable ? "Haan, ye recycle ho sakta hai." : "Ye recycle nahi hota.";
   return `${head} ${r.item}. ${r.binColor}. ${r.recycleSteps.join(". ")}`;
 }
@@ -173,10 +177,11 @@ export default function BuddyPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q }),
       });
-      const data = await readJson<{ answer?: string; error?: string }>(res);
+      const data = await readJson<{ answer?: string; speakHindi?: string; error?: string }>(res);
       if (!res.ok || !data.answer) throw new Error(data.error || "No answer.");
-      setChat((c) => [...c, { role: "bot", text: data.answer! }]);
-      speak(data.answer);
+      const hindi = data.speakHindi || data.answer;
+      setChat((c) => [...c, { role: "bot", text: data.answer!, speak: hindi }]);
+      speak(hindi);
     } catch (e) {
       setChat((c) => [...c, { role: "bot", text: e instanceof Error ? e.message : "Something went wrong." }]);
     } finally {
@@ -408,7 +413,7 @@ export default function BuddyPage() {
                       >
                         {m.text}
                         {m.role === "bot" && (
-                          <button onClick={() => speak(m.text, true)} className="block mt-1 text-xs underline text-neutral-500">
+                          <button onClick={() => speak(m.speak ?? m.text, true)} className="block mt-1 text-xs underline text-neutral-500">
                             🔊 Listen
                           </button>
                         )}

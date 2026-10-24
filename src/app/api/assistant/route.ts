@@ -10,8 +10,8 @@ export async function POST(req: NextRequest) {
     if (question.length > 500) {
       return NextResponse.json({ error: "question is too long" }, { status: 400 });
     }
-    const answer = await askAssistant(question.trim());
-    return NextResponse.json({ answer });
+    const { answer, speakHindi } = await askAssistant(question.trim());
+    return NextResponse.json({ answer, speakHindi });
   } catch (err) {
     console.error(err);
     const message = err instanceof Error ? err.message : "Unknown error";
