@@ -18,7 +18,7 @@ export default function Home() {
           </p>
 
           <Link
-            href="/scan"
+            href="/buddy"
             className="card-lift mt-7 inline-flex items-center gap-3 rounded-full bg-black text-white pl-5 pr-6 py-3.5 text-base font-bold"
           >
             <CameraIcon />

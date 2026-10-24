@@ -18,6 +18,7 @@ export interface ClassifyResult {
   confidence: number; // 0-1
   recyclable: boolean;
   recycleSteps: string[];
+  scrapValue: string; // e.g. "₹10–15/kg at a kabadiwala", empty if none
   spokenHindi: string;
   spokenEnglish: string;
 }
@@ -34,7 +35,7 @@ You will be shown one photo of a single item someone is about to throw away.
 Classify it into exactly one stream: "wet" (biodegradable/food waste), "dry" (recyclable: plastic, paper, metal, glass), "hazardous" (batteries, chemicals, e-waste, sharp objects), or "sanitary" (diapers, masks, sanitary pads, bandages).
 Also say whether it can realistically be recycled in India, and if so, how.
 Respond with a JSON object in exactly this shape:
-{"item": "short name of the item", "stream": "wet|dry|hazardous|sanitary", "reason": "one short sentence explaining why, mention contamination/lining if relevant", "confidence": 0.0-1.0, "recyclable": true|false, "recycleSteps": ["2-3 short practical steps, e.g. rinse it, flatten it, give to the kabadiwala / e-waste drop point; or composting for food waste; empty array if it truly cannot be recycled"]}
+{"item": "short name of the item", "stream": "wet|dry|hazardous|sanitary", "reason": "one short sentence explaining why, mention contamination/lining if relevant", "confidence": 0.0-1.0, "recyclable": true|false, "recycleSteps": ["2-3 short practical steps, e.g. rinse it, flatten it, give to the kabadiwala / e-waste drop point; or composting for food waste; empty array if it truly cannot be recycled"], "scrapValue": "typical Indian kabadiwala rate if it has resale value, e.g. ₹10-15/kg; empty string if none"}
 Be decisive. If an item is a composite (e.g. a plastic-lined paper cup), classify by the dominant disposal-relevant material and say so in the reason.`;
 
 async function callGemini(parts: unknown[], maxOutputTokens = 4096): Promise<string> {
@@ -101,6 +102,7 @@ export async function classifyWasteImage(
     confidence: number | string;
     recyclable?: boolean;
     recycleSteps?: string[];
+    scrapValue?: string;
   }>(text);
 
   const stream = STREAM_BIN_COLOR[parsed.stream] ? parsed.stream : "dry";
@@ -114,6 +116,7 @@ export async function classifyWasteImage(
     confidence: Number(parsed.confidence ?? 0.7),
     recyclable: Boolean(parsed.recyclable),
     recycleSteps: Array.isArray(parsed.recycleSteps) ? parsed.recycleSteps.slice(0, 4) : [],
+    scrapValue: typeof parsed.scrapValue === "string" ? parsed.scrapValue : "",
     spokenHindi: `${hindiStreamName(stream)}. ${hindiBinColor(stream)}.`,
     spokenEnglish: `${stream} waste. ${binColor}.`,
   };
