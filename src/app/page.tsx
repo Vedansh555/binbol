@@ -91,27 +91,22 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="mt-12 text-sm text-neutral-500">
-          <div className="flex items-center justify-between mb-1">
-            <span className="font-semibold text-neutral-700">
-              Demo bin stations
-            </span>
-            <Link href="/qr" className="text-xs underline hover:text-black">
-              Print QR codes →
-            </Link>
+        <Link
+          href="/stations"
+          className="card-lift group mt-6 flex items-center justify-between rounded-2xl bg-black text-white px-6 py-5"
+        >
+          <div>
+            <div className="text-xs uppercase tracking-wide opacity-60">
+              Bin stations
+            </div>
+            <div className="text-lg font-bold mt-1">
+              {STATIONS.length} stations across campus
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {STATIONS.map((s) => (
-              <Link
-                key={s.id}
-                href={`/scan/${s.id}`}
-                className="card-lift px-2 py-1 rounded border border-neutral-300 hover:border-black"
-              >
-                {s.id} · {s.landmark}
-              </Link>
-            ))}
-          </div>
-        </div>
+          <span className="text-2xl transition-transform group-hover:translate-x-1">
+            →
+          </span>
+        </Link>
       </div>
     </main>
   );
