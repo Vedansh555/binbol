@@ -18,7 +18,9 @@ interface ClassifyResponse {
   error?: string;
 }
 
-export default function ScanClient({ station }: { station: Station }) {
+// station is optional: /scan is a plain product scan, /scan/<id> also logs
+// the scan against that bin station for the dashboard.
+export default function ScanClient({ station }: { station?: Station }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,7 +49,7 @@ export default function ScanClient({ station }: { station: Station }) {
         body: JSON.stringify({
           imageBase64: base64,
           mimeType: "image/jpeg",
-          stationId: station.id,
+          stationId: station?.id,
           lang,
         }),
       });
@@ -98,7 +100,7 @@ export default function ScanClient({ station }: { station: Station }) {
       <div className="mt-4 rounded-2xl border-2 border-black p-5">
         <div className="flex items-center justify-between">
           <div className="text-xs uppercase tracking-wide opacity-60">
-            {station.id} · {station.landmark}
+            {station ? `${station.id} · ${station.landmark}` : "Any item · anywhere"}
           </div>
           {scanCount > 0 && (
             <div className="text-xs rounded-full bg-neutral-100 border border-neutral-300 px-2 py-0.5 text-neutral-500">
@@ -106,7 +108,7 @@ export default function ScanClient({ station }: { station: Station }) {
             </div>
           )}
         </div>
-        <h1 className="text-2xl font-black mt-1">Scan &amp; Speak</h1>
+        <h1 className="text-2xl font-black mt-1">Scan an item</h1>
 
         <div className="mt-4 aspect-square w-full rounded-xl bg-neutral-100 border border-neutral-300 overflow-hidden flex items-center justify-center">
           {preview ? (

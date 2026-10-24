@@ -37,6 +37,28 @@ export default function DashboardPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [route, setRoute] = useState<{ stops: RouteStop[]; briefHindi: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [briefState, setBriefState] = useState<"idle" | "loading" | "playing">("idle");
+
+  // Collection staff often can't read an English dashboard, so the route is
+  // also spoken as a Hindi audio brief via ElevenLabs.
+  async function playBrief() {
+    if (!route || briefState !== "idle") return;
+    setBriefState("loading");
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: route.briefHindi }),
+      });
+      if (!res.ok) throw new Error();
+      const audio = new Audio(URL.createObjectURL(await res.blob()));
+      audio.onended = () => setBriefState("idle");
+      setBriefState("playing");
+      await audio.play();
+    } catch {
+      setBriefState("idle");
+    }
+  }
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -91,7 +113,22 @@ export default function DashboardPage() {
 
       <div className="mt-8 grid lg:grid-cols-2 gap-6">
         <section>
-          <h2 className="font-bold text-lg">Today&apos;s route</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-bold text-lg">Today&apos;s route</h2>
+            {route && (
+              <button
+                onClick={playBrief}
+                disabled={briefState !== "idle"}
+                className="text-sm rounded-full bg-black text-white px-4 py-1.5 font-semibold disabled:opacity-60"
+              >
+                {briefState === "loading"
+                  ? "Preparing…"
+                  : briefState === "playing"
+                    ? "🔊 Playing…"
+                    : "🔊 Play Hindi route brief"}
+              </button>
+            )}
+          </div>
           {route && (
             <p className="text-sm italic text-neutral-500 mt-1">
               &ldquo;{route.briefHindi}&rdquo;

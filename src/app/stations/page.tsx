@@ -1,97 +1,80 @@
-"use client";
-
-import { useMemo, useState } from "react";
 import Link from "next/link";
-import { STATIONS, type Station } from "@/lib/stations";
+import { STATIONS, type Stream } from "@/lib/stations";
 
-// Station names end in " - Wet" / " - Dry" / " - Mixed"; split that off so
-// the card can show the place and the bin type separately.
-function parse(s: Station) {
-  const [place, type = ""] = s.name.split(" - ");
-  return { place, type: type.toLowerCase() };
-}
+const STREAMS: Stream[] = ["wet", "dry", "hazardous", "sanitary"];
 
-const TYPE_STYLE: Record<string, string> = {
-  wet: "stream-wet",
-  dry: "stream-dry",
-  mixed: "bg-black text-white",
-};
-
+// Plain directory of bin stations: where they are and how many bins of each
+// stream sit there. Deliberately no camera/scan here — scanning is per item.
 export default function StationsPage() {
-  const [q, setQ] = useState("");
-
-  const filtered = useMemo(() => {
-    const t = q.trim().toLowerCase();
-    if (!t) return STATIONS;
-    return STATIONS.filter((s) =>
-      [s.id, s.name, s.landmark].some((f) => f.toLowerCase().includes(t))
-    );
-  }, [q]);
+  const totals = STREAMS.map((st) => STATIONS.reduce((n, s) => n + s.bins[st], 0));
+  const totalBins = totals.reduce((a, b) => a + b, 0);
 
   return (
     <main className="flex-1 w-full">
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="text-sm text-neutral-500 hover:underline">
-            ← BinBol
-          </Link>
-          <Link
-            href="/qr"
-            className="text-sm rounded-full border-2 border-black px-4 py-1.5 hover:bg-black hover:text-white transition-colors"
-          >
-            Print QR codes
-          </Link>
-        </div>
+      <div className="max-w-4xl mx-auto px-6 py-10">
+        <Link href="/" className="text-sm text-neutral-500 hover:underline">
+          ← BinBol
+        </Link>
 
         <h1 className="text-4xl font-black tracking-tight mt-6">Bin stations</h1>
         <p className="text-neutral-600 mt-1">
-          {STATIONS.length} stations across campus. Tap one to scan an item there.
+          {STATIONS.length} stations · {totalBins} bins across campus
         </p>
 
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search a bhawan, mess, library…"
-          className="mt-6 w-full sm:w-96 rounded-full border-2 border-black px-5 py-2.5 outline-none focus:shadow-[0_0_0_4px_rgba(0,0,0,0.08)]"
-        />
+        <div className="mt-5 flex flex-wrap gap-2 text-xs">
+          {STREAMS.map((st, i) => (
+            <span key={st} className={`stream-${st} px-3 py-1 rounded-full font-semibold capitalize`}>
+              {st} · {totals[i]}
+            </span>
+          ))}
+        </div>
 
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((s) => {
-            const { place, type } = parse(s);
+        <div className="mt-8 rounded-2xl border-2 border-black overflow-hidden">
+          <div className="hidden sm:grid grid-cols-[90px_1fr_repeat(4,56px)_56px] gap-2 px-5 py-3 bg-black text-white text-xs uppercase tracking-wide">
+            <span>Station</span>
+            <span>Location</span>
+            {STREAMS.map((st) => (
+              <span key={st} className="text-center">{st === "hazardous" ? "Haz" : st === "sanitary" ? "San" : st}</span>
+            ))}
+            <span className="text-center">Total</span>
+          </div>
+
+          {STATIONS.map((s) => {
+            const place = s.name.split(" - ")[0];
+            const spot = s.landmark.split(", ").slice(1).join(", ") || s.landmark;
+            const total = STREAMS.reduce((n, st) => n + s.bins[st], 0);
             return (
-              <Link
+              <div
                 key={s.id}
-                href={`/scan/${s.id}`}
-                className="card-lift group rounded-2xl border-2 border-black p-5 bg-white flex flex-col"
+                className="grid grid-cols-[1fr_auto] sm:grid-cols-[90px_1fr_repeat(4,56px)_56px] gap-2 items-center px-5 py-3.5 border-t border-neutral-200 first:border-t-0"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <span className="font-mono text-xs tracking-wider text-neutral-500">
-                    {s.id}
+                <span className="font-mono text-xs text-neutral-500 sm:order-none order-first col-span-2 sm:col-span-1">
+                  {s.id}
+                </span>
+                <div>
+                  <div className="font-bold">{place}</div>
+                  <div className="text-sm text-neutral-500 capitalize">{spot}</div>
+                </div>
+                {STREAMS.map((st) => (
+                  <span
+                    key={st}
+                    className={`hidden sm:block text-center font-mono ${s.bins[st] ? "font-bold" : "text-neutral-300"}`}
+                  >
+                    {s.bins[st]}
                   </span>
-                  {type && (
-                    <span
-                      className={`${TYPE_STYLE[type] ?? "bg-black text-white"} text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full`}
-                    >
-                      {type}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-3 text-xl font-black leading-tight">{place}</div>
-                <div className="text-sm text-neutral-500 mt-1 capitalize">
-                  {s.landmark.split(", ").slice(1).join(", ") || s.landmark}
-                </div>
-                <div className="mt-5 pt-4 border-t border-neutral-200 flex items-center justify-between text-sm font-semibold">
-                  <span>Scan &amp; Speak</span>
-                  <span className="transition-transform group-hover:translate-x-1">→</span>
-                </div>
-              </Link>
+                ))}
+                <span className="text-center font-black">
+                  {total}
+                  <span className="sm:hidden text-xs font-normal text-neutral-500"> bins</span>
+                </span>
+              </div>
             );
           })}
         </div>
 
-        {filtered.length === 0 && (
-          <p className="mt-10 text-neutral-500">No station matches “{q}”.</p>
-        )}
+        <p className="mt-4 text-xs text-neutral-400">
+          Bin counts are a planned layout for the pilot, to be confirmed on a campus walk-through.
+        </p>
       </div>
     </main>
   );
