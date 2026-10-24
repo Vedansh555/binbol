@@ -3,71 +3,147 @@ import { STATIONS } from "@/lib/stations";
 
 export default function Home() {
   return (
-    <main className="flex-1 max-w-4xl mx-auto px-6 py-16 w-full">
-      <h1 className="text-5xl font-black tracking-tight">BinBol</h1>
-      <p className="text-xl italic text-neutral-600 mt-2">
-        Give campus waste a voice.
-      </p>
-      <p className="mt-4 text-neutral-700 max-w-xl">
-        A voice + camera layer that helps a campus segregate, collect and
-        report its waste. No app to install — a phone camera and a voice is
-        enough.
-      </p>
+    <main className="flex-1 w-full">
+      <div className="max-w-5xl mx-auto px-6 pt-16 pb-10 grid md:grid-cols-[1.1fr_auto] gap-10 items-center">
+        <div>
+          <h1 className="text-6xl font-black tracking-tight">BinBol</h1>
+          <p className="text-xl italic text-neutral-600 mt-2">
+            Give campus waste a voice.
+          </p>
+          <p className="mt-4 text-neutral-700 max-w-xl">
+            A voice + camera layer that helps a campus segregate, collect and
+            report its waste. No app to install — a phone camera and a voice
+            is enough.
+          </p>
 
-      <div className="mt-10 grid sm:grid-cols-3 gap-4">
-        <Link
-          href={`/scan/${STATIONS[0].id}`}
-          className="block rounded-xl border-2 border-black p-5 hover:bg-black hover:text-white transition-colors"
-        >
-          <div className="text-xs uppercase tracking-wide opacity-60">A · Scan</div>
-          <div className="text-lg font-bold mt-1">Scan &amp; Speak</div>
-          <div className="text-sm mt-2 opacity-70">
-            Photograph an item, hear which bin it goes in.
+          <div className="mt-6 flex flex-wrap gap-2 text-xs">
+            <span className="px-3 py-1 rounded-full bg-neutral-900 text-white">
+              4-stream segregation
+            </span>
+            <span className="px-3 py-1 rounded-full border border-neutral-300">
+              Hindi voice agent
+            </span>
+            <span className="px-3 py-1 rounded-full border border-neutral-300">
+              Zero new hardware
+            </span>
           </div>
-        </Link>
+        </div>
 
-        <Link
-          href="/call"
-          className="block rounded-xl border-2 border-black p-5 hover:bg-black hover:text-white transition-colors"
-        >
-          <div className="text-xs uppercase tracking-wide opacity-60">B · Talk</div>
-          <div className="text-lg font-bold mt-1">Call &amp; Report</div>
-          <div className="text-sm mt-2 opacity-70">
-            Speak in Hindi to report a full or overflowing bin.
+        <div className="bin3d-scene mx-auto" aria-hidden="true">
+          <div className="bin3d-cube">
+            <div className="bin3d-face bin3d-face--front">Wet</div>
+            <div className="bin3d-face bin3d-face--back">Wet</div>
+            <div className="bin3d-face bin3d-face--right">Dry</div>
+            <div className="bin3d-face bin3d-face--left">Dry</div>
+            <div className="bin3d-face bin3d-face--top">Hazard</div>
+            <div className="bin3d-face bin3d-face--bottom">Sanitary</div>
           </div>
-        </Link>
-
-        <Link
-          href="/dashboard"
-          className="block rounded-xl border-2 border-black p-5 hover:bg-black hover:text-white transition-colors"
-        >
-          <div className="text-xs uppercase tracking-wide opacity-60">C · Monitor</div>
-          <div className="text-lg font-bold mt-1">Dashboard</div>
-          <div className="text-sm mt-2 opacity-70">
-            Today&apos;s 4-stream log and the morning collection route.
-          </div>
-        </Link>
+        </div>
       </div>
 
-      <div className="mt-12 text-sm text-neutral-500">
-        <div className="flex items-center justify-between mb-1">
-          <span className="font-semibold text-neutral-700">Demo bin stations</span>
-          <Link href="/qr" className="text-xs underline hover:text-black">
-            Print QR codes →
+      <div className="max-w-5xl mx-auto px-6 pb-16">
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Link
+            href={`/scan/${STATIONS[0].id}`}
+            className="card-lift block rounded-2xl border-2 border-black p-5 hover:bg-black hover:text-white"
+          >
+            <div className="flex items-center gap-2">
+              <CameraIcon />
+              <span className="text-xs uppercase tracking-wide opacity-60">
+                A · Scan
+              </span>
+            </div>
+            <div className="text-lg font-bold mt-2">Scan &amp; Speak</div>
+            <div className="text-sm mt-2 opacity-70">
+              Photograph an item, hear which bin it goes in.
+            </div>
+          </Link>
+
+          <Link
+            href="/call"
+            className="card-lift block rounded-2xl border-2 border-black p-5 hover:bg-black hover:text-white"
+          >
+            <div className="flex items-center gap-2">
+              <MicIcon />
+              <span className="text-xs uppercase tracking-wide opacity-60">
+                B · Talk
+              </span>
+            </div>
+            <div className="text-lg font-bold mt-2">Call &amp; Report</div>
+            <div className="text-sm mt-2 opacity-70">
+              Speak in Hindi to report a full or overflowing bin.
+            </div>
+          </Link>
+
+          <Link
+            href="/dashboard"
+            className="card-lift block rounded-2xl border-2 border-black p-5 hover:bg-black hover:text-white"
+          >
+            <div className="flex items-center gap-2">
+              <ChartIcon />
+              <span className="text-xs uppercase tracking-wide opacity-60">
+                C · Monitor
+              </span>
+            </div>
+            <div className="text-lg font-bold mt-2">Dashboard</div>
+            <div className="text-sm mt-2 opacity-70">
+              Today&apos;s 4-stream log and the morning collection route.
+            </div>
           </Link>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {STATIONS.map((s) => (
-            <Link
-              key={s.id}
-              href={`/scan/${s.id}`}
-              className="px-2 py-1 rounded border border-neutral-300 hover:border-black"
-            >
-              {s.id} · {s.landmark}
+
+        <div className="mt-12 text-sm text-neutral-500">
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-semibold text-neutral-700">
+              Demo bin stations
+            </span>
+            <Link href="/qr" className="text-xs underline hover:text-black">
+              Print QR codes →
             </Link>
-          ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {STATIONS.map((s) => (
+              <Link
+                key={s.id}
+                href={`/scan/${s.id}`}
+                className="card-lift px-2 py-1 rounded border border-neutral-300 hover:border-black"
+              >
+                {s.id} · {s.landmark}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </main>
+  );
+}
+
+function CameraIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  );
+}
+
+function MicIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+      <line x1="12" y1="19" x2="12" y2="23" />
+      <line x1="8" y1="23" x2="16" y2="23" />
+    </svg>
+  );
+}
+
+function ChartIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
   );
 }
