@@ -21,6 +21,15 @@ interface Chat {
   text: string;
 }
 
+// 0.1s of silence, used to unlock audio playback on a tap.
+const SILENT_WAV =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+
+function verdictFor(r: Result) {
+  const head = r.recyclable ? "Haan, ye recycle ho sakta hai." : "Ye recycle nahi hota.";
+  return `${head} ${r.item}. ${r.binColor}. ${r.recycleSteps.join(". ")}`;
+}
+
 const QUICK = ["Chips packet recyclable?", "Purani battery kahan daalun?", "Pizza box?", "Kya thermocol recycle hota hai?"];
 
 // Recycle Buddy: a full-screen camera-first helper. Live viewfinder ->
@@ -36,6 +45,8 @@ export default function BuddyPage() {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(true);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [checked, setChecked] = useState(0);
   const [recyclableCount, setRecyclableCount] = useState(0);
   const [chat, setChat] = useState<Chat[]>([]);
@@ -84,6 +95,7 @@ export default function BuddyPage() {
       const data = await readJson<Result>(res);
       if (!res.ok) throw new Error(data.error || "Couldn't check that one.");
       setResult(data);
+      speak(verdictFor(data));
       setChecked((n) => n + 1);
       if (data.recyclable) setRecyclableCount((n) => n + 1);
     } catch (e) {
@@ -94,6 +106,7 @@ export default function BuddyPage() {
   }
 
   function shoot() {
+    unlockAudio();
     const v = videoRef.current;
     if (!v || !v.videoWidth) return;
     const scale = Math.min(1, 1024 / Math.max(v.videoWidth, v.videoHeight));
@@ -114,8 +127,23 @@ export default function BuddyPage() {
     }
   }
 
-  async function speak(text: string) {
-    if (speaking) return;
+  // Phones only allow audio that starts from a tap. Every tap (shutter,
+  // upload, Ask) primes one shared <audio> element with a silent clip, so
+  // answers that arrive seconds later can play automatically through it.
+  function unlockAudio() {
+    if (!audioRef.current) audioRef.current = new Audio();
+    const a = audioRef.current;
+    if (a.src && !a.paused) return;
+    a.src = SILENT_WAV;
+    a.play().then(() => a.pause()).catch(() => {});
+  }
+
+  // ElevenLabs voice speaks every verdict and answer automatically.
+  async function speak(text: string, force = false) {
+    if (!voiceOn && !force) return;
+    if (!audioRef.current) audioRef.current = new Audio();
+    const a = audioRef.current;
+    a.pause();
     setSpeaking(true);
     try {
       const res = await fetch("/api/tts", {
@@ -124,9 +152,9 @@ export default function BuddyPage() {
         body: JSON.stringify({ text }),
       });
       if (!res.ok) throw new Error();
-      const audio = new Audio(URL.createObjectURL(await res.blob()));
-      audio.onended = () => setSpeaking(false);
-      await audio.play();
+      a.src = URL.createObjectURL(await res.blob());
+      a.onended = () => setSpeaking(false);
+      await a.play();
     } catch {
       setSpeaking(false);
     }
@@ -135,6 +163,7 @@ export default function BuddyPage() {
   async function ask(preset?: string) {
     const q = (preset ?? input).trim();
     if (!q || asking) return;
+    unlockAudio();
     setInput("");
     setChat((c) => [...c, { role: "user", text: q }]);
     setAsking(true);
@@ -147,6 +176,7 @@ export default function BuddyPage() {
       const data = await readJson<{ answer?: string; error?: string }>(res);
       if (!res.ok || !data.answer) throw new Error(data.error || "No answer.");
       setChat((c) => [...c, { role: "bot", text: data.answer! }]);
+      speak(data.answer);
     } catch (e) {
       setChat((c) => [...c, { role: "bot", text: e instanceof Error ? e.message : "Something went wrong." }]);
     } finally {
@@ -154,9 +184,7 @@ export default function BuddyPage() {
     }
   }
 
-  const verdictText = result
-    ? `${result.recyclable ? "Haan, ye recycle ho sakta hai." : "Ye recycle nahi hota."} ${result.item}. ${result.binColor}. ${result.recycleSteps.join(". ")}`
-    : "";
+  const verdictText = result ? verdictFor(result) : "";
 
   return (
     <main className="flex-1 w-full">
@@ -166,6 +194,17 @@ export default function BuddyPage() {
             ← BinBol
           </Link>
           <div className="flex items-center gap-2 text-xs">
+            <button
+              onClick={() => {
+                setVoiceOn((v) => !v);
+                audioRef.current?.pause();
+                setSpeaking(false);
+              }}
+              className={`rounded-full px-3 py-1 font-semibold border-2 border-black ${voiceOn ? "bg-black text-white" : ""}`}
+              aria-pressed={voiceOn}
+            >
+              {voiceOn ? "🔊 Voice on" : "🔇 Voice off"}
+            </button>
             <span className="rounded-full border-2 border-black px-3 py-1 font-semibold">
               {checked} checked
             </span>
@@ -241,7 +280,10 @@ export default function BuddyPage() {
 
             <div className="mt-4 flex items-center justify-center gap-6">
               <button
-                onClick={() => fileRef.current?.click()}
+                onClick={() => {
+                  unlockAudio();
+                  fileRef.current?.click();
+                }}
                 className="w-12 h-12 rounded-full border-2 border-black flex items-center justify-center text-lg hover:bg-black hover:text-white transition-colors"
                 aria-label="Upload a photo"
                 title="Upload a photo"
@@ -342,11 +384,11 @@ export default function BuddyPage() {
                     </div>
                   )}
                   <button
-                    onClick={() => speak(verdictText)}
+                    onClick={() => speak(verdictText, true)}
                     disabled={speaking}
                     className="w-full rounded-full border-2 border-black py-2.5 text-sm font-bold hover:bg-black hover:text-white transition-colors disabled:opacity-60"
                   >
-                    {speaking ? "🔊 Speaking…" : "🔊 Hear it in Hindi"}
+                    {speaking ? "🔊 Speaking…" : "🔊 Play again"}
                   </button>
                 </div>
               </div>
@@ -366,7 +408,7 @@ export default function BuddyPage() {
                       >
                         {m.text}
                         {m.role === "bot" && (
-                          <button onClick={() => speak(m.text)} className="block mt-1 text-xs underline text-neutral-500">
+                          <button onClick={() => speak(m.text, true)} className="block mt-1 text-xs underline text-neutral-500">
                             🔊 Listen
                           </button>
                         )}
