@@ -8,18 +8,19 @@ export async function POST(req: NextRequest) {
     const { imageBase64, mimeType, stationId, lang } = body as {
       imageBase64: string;
       mimeType: string;
-      stationId: string;
+      stationId?: string;
       lang?: "hi" | "en";
     };
 
-    if (!imageBase64 || !stationId) {
-      return NextResponse.json(
-        { error: "imageBase64 and stationId are required" },
-        { status: 400 }
-      );
+    if (!imageBase64) {
+      return NextResponse.json({ error: "imageBase64 is required" }, { status: 400 });
     }
 
     const result = await classifyWasteImage(imageBase64, mimeType || "image/jpeg");
+
+    // The assistant's "can I recycle this?" camera isn't tied to a bin
+    // station, so it doesn't count toward the station scan log.
+    if (!stationId) return NextResponse.json(result);
 
     const scan = addScan({
       stationId,

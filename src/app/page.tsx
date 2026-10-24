@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { STATIONS } from "@/lib/stations";
+import Bin3D from "./Bin3D";
 
 export default function Home() {
   return (
@@ -29,14 +30,8 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="bin3d-scene mx-auto" aria-hidden="true">
-          <div className="bin3d-rig">
-            <div className="bin3d-shadow" />
-            <div className="bin3d-body" />
-            <div className="bin3d-label">BinBol</div>
-            <div className="bin3d-lid" />
-            <div className="bin3d-knob" />
-          </div>
+        <div className="mx-auto">
+          <Bin3D />
         </div>
       </div>
 

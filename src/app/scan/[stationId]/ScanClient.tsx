@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import type { Station } from "@/lib/stations";
+import { compressImage, readJson } from "@/lib/image";
 
 interface ClassifyResponse {
   item: string;
@@ -10,6 +11,8 @@ interface ClassifyResponse {
   binColor: string;
   reason: string;
   confidence: number;
+  recyclable: boolean;
+  recycleSteps: string[];
   spokenHindi: string;
   spokenEnglish: string;
   error?: string;
@@ -48,20 +51,7 @@ export default function ScanClient({ station }: { station: Station }) {
           lang,
         }),
       });
-      // Vercel's own errors (e.g. 413 payload too large) come back as plain
-      // text, so read text first instead of trusting res.json() — otherwise
-      // Safari surfaces a cryptic "string did not match the expected pattern".
-      const raw = await res.text();
-      let data: ClassifyResponse;
-      try {
-        data = JSON.parse(raw);
-      } catch {
-        throw new Error(
-          res.status === 413
-            ? "Photo too large — please try again."
-            : `Server error (${res.status}). Please try again.`
-        );
-      }
+      const data = await readJson<ClassifyResponse>(res);
       if (!res.ok) throw new Error(data.error || "Classification failed");
       setResult(data);
       setScanCount((n) => n + 1);
@@ -188,6 +178,19 @@ export default function ScanClient({ station }: { station: Station }) {
               {result.stream} · {result.binColor}
             </div>
 
+            <div className="mt-3 text-sm">
+              <span className="font-bold">
+                {result.recyclable ? "♻ Recyclable" : "✕ Not recyclable"}
+              </span>
+              {result.recycleSteps?.length > 0 && (
+                <ul className="mt-1 list-disc pl-5 text-neutral-600">
+                  {result.recycleSteps.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             {result.confidence < LOW_CONFIDENCE && (
               <div className="mt-3 text-sm rounded-lg border-2 border-dashed border-black px-3 py-2">
                 <span className="font-bold">⚠ Not fully sure</span> — a
@@ -217,37 +220,4 @@ export default function ScanClient({ station }: { station: Station }) {
       </div>
     </main>
   );
-}
-
-// Phone camera photos are 3–8 MB, which blows past Vercel's ~4.5 MB request
-// body limit once base64-encoded. Downscale to a max of 1024px on the long
-// edge and re-encode as JPEG (~100–200 KB) — plenty for classification, and
-// it also normalises HEIC/PNG uploads into a format the model accepts.
-const MAX_EDGE = 1024;
-
-function compressImage(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      const scale = Math.min(1, MAX_EDGE / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("Could not process the photo."));
-        return;
-      }
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      // strip the "data:image/jpeg;base64," prefix
-      resolve(canvas.toDataURL("image/jpeg", 0.82).split(",")[1]);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Could not read that photo — try taking it again."));
-    };
-    img.src = url;
-  });
 }

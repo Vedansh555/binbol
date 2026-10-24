@@ -1,7 +1,14 @@
-// Vision classification via Google Gemini (free tier via AI Studio — no
-// credit card needed, see SETUP.md). Swap this file if you'd rather use
-// OpenAI or Anthropic vision; the rest of the app only depends on
-// classifyWasteImage's return shape.
+// Vision classification + assistant answers via Google Gemini (free tier via
+// AI Studio — no credit card needed, see SETUP.md). Swap this file if you'd
+// rather use OpenAI or Anthropic; the rest of the app only depends on the
+// exported functions' return shapes.
+
+// gemini-3.5-flash answers in ~5s with JSON mode. gemini-3.8-flash "thinks"
+// by default: it took ~97s and its thinking ate the output budget, cutting
+// the JSON off mid-object. 3.5-flash still spends some output tokens on
+// thinking, so the budget is generous to keep answers from truncating.
+const MODEL = "gemini-3.5-flash";
+const FALLBACK_MODEL = "gemini-3.5-flash-lite";
 
 export interface ClassifyResult {
   item: string;
@@ -9,6 +16,8 @@ export interface ClassifyResult {
   binColor: string;
   reason: string;
   confidence: number; // 0-1
+  recyclable: boolean;
+  recycleSteps: string[];
   spokenHindi: string;
   spokenEnglish: string;
 }
@@ -23,49 +32,47 @@ const STREAM_BIN_COLOR: Record<ClassifyResult["stream"], string> = {
 const SYSTEM_PROMPT = `You are BinBol, a waste-sorting assistant for an Indian college campus.
 You will be shown one photo of a single item someone is about to throw away.
 Classify it into exactly one stream: "wet" (biodegradable/food waste), "dry" (recyclable: plastic, paper, metal, glass), "hazardous" (batteries, chemicals, e-waste, sharp objects), or "sanitary" (diapers, masks, sanitary pads, bandages).
-Respond with ONLY a compact JSON object, no markdown fences, no extra text, in this exact shape:
-{"item": "short name of the item", "stream": "wet|dry|hazardous|sanitary", "reason": "one short sentence explaining why, mention contamination/lining if relevant", "confidence": 0.0-1.0}
+Also say whether it can realistically be recycled in India, and if so, how.
+Respond with a JSON object in exactly this shape:
+{"item": "short name of the item", "stream": "wet|dry|hazardous|sanitary", "reason": "one short sentence explaining why, mention contamination/lining if relevant", "confidence": 0.0-1.0, "recyclable": true|false, "recycleSteps": ["2-3 short practical steps, e.g. rinse it, flatten it, give to the kabadiwala / e-waste drop point; or composting for food waste; empty array if it truly cannot be recycled"]}
 Be decisive. If an item is a composite (e.g. a plastic-lined paper cup), classify by the dominant disposal-relevant material and say so in the reason.`;
 
-export async function classifyWasteImage(
-  imageBase64: string,
-  mimeType: string
-): Promise<ClassifyResult> {
+async function callGemini(parts: unknown[], maxOutputTokens = 4096): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not set. Add it to .env.local — see SETUP.md.");
   }
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: SYSTEM_PROMPT },
-              { inline_data: { mime_type: mimeType, data: imageBase64 } },
-            ],
-          },
-        ],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 300 },
-      }),
+  const body = JSON.stringify({
+    contents: [{ parts }],
+    generationConfig: {
+      temperature: 0.2,
+      maxOutputTokens,
+      responseMimeType: "application/json",
+    },
+  });
+
+  // Google returns 503 "high demand" spikes now and then; fall back to the
+  // lite model rather than failing a scan in the middle of a demo.
+  let lastError = "";
+  for (const model of [MODEL, FALLBACK_MODEL]) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     }
-  );
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Gemini API error ${res.status}: ${errText}`);
+    lastError = `Gemini API error ${res.status}: ${await res.text()}`;
+    if (![429, 500, 503].includes(res.status)) break;
   }
+  throw new Error(lastError);
+}
 
-  const data = await res.json();
-  const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-
+function parseJson<T>(text: string): T {
   const cleaned = text.trim().replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
-
-  let parsed: { item: string; stream: ClassifyResult["stream"]; reason: string; confidence: number };
+  let parsed: unknown;
   try {
     parsed = JSON.parse(cleaned);
   } catch {
@@ -74,19 +81,55 @@ export async function classifyWasteImage(
     if (!match) throw new Error(`Could not parse Gemini response: ${text}`);
     parsed = JSON.parse(match[0]);
   }
+  // Some models occasionally wrap a single object in an array.
+  return (Array.isArray(parsed) ? parsed[0] : parsed) as T;
+}
 
-  const stream = parsed.stream;
-  const binColor = STREAM_BIN_COLOR[stream] ?? "Blue bin";
+export async function classifyWasteImage(
+  imageBase64: string,
+  mimeType: string
+): Promise<ClassifyResult> {
+  const text = await callGemini([
+    { text: SYSTEM_PROMPT },
+    { inline_data: { mime_type: mimeType, data: imageBase64 } },
+  ]);
+
+  const parsed = parseJson<{
+    item: string;
+    stream: ClassifyResult["stream"];
+    reason: string;
+    confidence: number | string;
+    recyclable?: boolean;
+    recycleSteps?: string[];
+  }>(text);
+
+  const stream = STREAM_BIN_COLOR[parsed.stream] ? parsed.stream : "dry";
+  const binColor = STREAM_BIN_COLOR[stream];
 
   return {
     item: parsed.item,
     stream,
     binColor,
     reason: parsed.reason,
-    confidence: parsed.confidence ?? 0.7,
+    confidence: Number(parsed.confidence ?? 0.7),
+    recyclable: Boolean(parsed.recyclable),
+    recycleSteps: Array.isArray(parsed.recycleSteps) ? parsed.recycleSteps.slice(0, 4) : [],
     spokenHindi: `${hindiStreamName(stream)}. ${hindiBinColor(stream)}.`,
     spokenEnglish: `${stream} waste. ${binColor}.`,
   };
+}
+
+const ASSISTANT_PROMPT = `You are BinBol's friendly assistant on an Indian college campus (IIT Roorkee).
+You help people with waste segregation (wet/dry/hazardous/sanitary bins), recycling, composting, e-waste, and using the BinBol app (scan a bin's QR to check an item, call to report a full bin, dashboard for the estate office).
+Reply in the user's language (Hindi, Hinglish or English). Keep it short and practical: at most 3 sentences.
+If asked something unrelated to waste or BinBol, politely steer back.
+Respond with a JSON object: {"answer": "..."}`;
+
+export async function askAssistant(question: string): Promise<string> {
+  const text = await callGemini(
+    [{ text: ASSISTANT_PROMPT }, { text: `User: ${question}` }]
+  );
+  return parseJson<{ answer: string }>(text).answer;
 }
 
 function hindiStreamName(stream: ClassifyResult["stream"]): string {
