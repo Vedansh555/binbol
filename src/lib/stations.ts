@@ -40,7 +40,6 @@ export interface Bin {
   id: string;
   stream: Stream;
   spot: string; // exact place within the station
-  fill: number; // estimated %, 0-100
 }
 
 // Where bins typically sit inside a bhawan/building. Placeholder until the
@@ -58,7 +57,7 @@ const SPOTS = [
   "Near cycle stand",
 ];
 
-// Small deterministic hash so a bin's placeholder spot/fill stays stable
+// Small deterministic hash so a bin's placeholder spot stays stable
 // between renders and deploys.
 function hash(str: string): number {
   let h = 2166136261;
@@ -68,8 +67,7 @@ function hash(str: string): number {
 
 const STREAM_CODE: Record<Stream, string> = { wet: "W", dry: "D", hazardous: "H", sanitary: "S" };
 
-// Individual bins at a station. Fill is an estimate (time since last
-// pickup); live staff reports override it on the station page.
+// Individual bins at a station, each with its own spot.
 export function binsFor(station: Station): Bin[] {
   const out: Bin[] = [];
   const offset = hash(station.id) % SPOTS.length;
@@ -81,7 +79,6 @@ export function binsFor(station: Station): Bin[] {
         id,
         stream,
         spot: SPOTS[(offset + n * 3) % SPOTS.length],
-        fill: 12 + (hash(id) % 80),
       });
       n++;
     }

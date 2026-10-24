@@ -4,7 +4,7 @@ import { STATIONS, type Stream } from "@/lib/stations";
 const STREAMS: Stream[] = ["wet", "dry", "hazardous", "sanitary"];
 
 // Plain directory of bin stations: where they are and how many bins of each
-// stream sit there. Tap a row for each bin's exact spot and fill level.
+// stream sit there. Tap a row for each bin's exact spot.
 // Deliberately no camera here: scanning happens in Recycle Buddy.
 export default function StationsPage() {
   const totals = STREAMS.map((st) => STATIONS.reduce((n, s) => n + s.bins[st], 0));
